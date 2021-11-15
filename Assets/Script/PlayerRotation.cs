@@ -5,82 +5,159 @@ using UnityEngine;
 public class PlayerRotation : MonoBehaviour
 {
     public PlayerController playerController;
-
+    public float RotationSpeed = 18f;
+    public float SlowRotationSpeed = 3f;
+    public float roX;
+    public float speed=0.1f;
+    public float targetAngle = 0.001f;
     [SerializeField]
     public Rigidbody rbKnife;           //←力を加える対象
     [SerializeField]
     private GameObject goKnife;
-
-    private float roX;
-
+    private bool isStart = false;
+    private bool isFall = false;
+    private bool isCutting = false;
     void Start()
     {
+       rbKnife.maxAngularVelocity = RotationSpeed;//maxAngularVelocityは初期値が7
+       //Time.timeScale = 0;
+       isStart = false;
+     
         
     }
 
+   
 
     void Update()
     {
-      if(playerController.KnifeisKinematic==false)
+
+
+        roX = GetInpectorEulersX(rbKnife.transform);//オブジェクトの回転座標取得
+        //roX = goKnife.transform.localEulerAngles.x;//localEulerAnglesを使うと、ジンバルロック問題が出る
+
+        if(rbKnife.velocity.y>0)
         {
-           
-            roX = goKnife.transform.localEulerAngles.x;//オブジェクトの回転座標取得
+            isFall = false;
+        }
+        else
+        {
+            isFall = true;
+        }
 
+        if (Input.GetMouseButtonDown(0))
+        {
 
-            //11111111111111111111111111111111111111111111111111111111111111111111111111111111111111
-            //if (roX <= 180.0f)
-            //{
-            //    Debug.Log("回転：速い");
-            //    //触れていないときに回転
-            //    //goKife.transform.Rotate(0.8f, 0, 0, Space.World);
-            //    goKnife.transform.Rotate(new Vector3(0.8f, 0, 0));//1フレームごとに0.5度回転
-
-            //}
-            //else
-            //{
-
-            //    Debug.Log("回転：遅い");
-            //   // goKife.transform.Rotate(0.3f, 0, 0, Space.World);
-            //    goKnife.transform.Rotate(new Vector3(0.3f, 0, 0));//1フレームごとに0.5度回転
-            //}
-            //111111111111111111111111111111111111111111111111111111111111111111111111111111111111111
-
-
-            //222222222222222222222222222222222222222222222222222222222222222222222222222222222222222
-            if (roX <= 180.0f)
+            isCutting = false;
+            rbKnife.AddTorque(-Vector3.right * 500 * Mathf.PI);
+        
+            //rbKnife.maxAngularVelocity = RotationSpeed;
+            isStart = true;
+         
+        }
+       
+        if(!isCutting)
+        {
+            if (isFall)
             {
-                Debug.Log("回転：速い");
-                rbKnife.AddTorque(-Vector3.right * Mathf.PI*1.2f);
-                //goKnife.transform.rotation = rotation;
+                if ((roX < 135) && (roX > -15))
+                {
+                    float speed = RotationSpeed;
+                    speed -= 3f;
+                    if (speed <= SlowRotationSpeed)
+                    {
+                        speed = SlowRotationSpeed;
+                    }
+                    rbKnife.maxAngularVelocity = speed;
 
+                }
+                else
+                {
+                    float speed = RotationSpeed;
+                    speed += 0.01f;
+                    if (speed >= RotationSpeed * 1.1f)
+                    {
+                        speed = RotationSpeed * 1.1f;
+                    }
+                    rbKnife.maxAngularVelocity = speed;
+                    rbKnife.AddTorque(-Vector3.right * 500 * Mathf.PI);
+                }
             }
             else
             {
-
-                Debug.Log("回転：遅い");
-                //var rotation = Quaternion.Euler(new Vector3(10.0f*Time.deltaTime, 0f, 0f));
-                //goKnife.transform.rotation = rotation;
-                rbKnife.AddTorque(-Vector3.right * Mathf.PI*0.2f);
+                rbKnife.maxAngularVelocity = RotationSpeed;
             }
-            //222222222222222222222222222222222222222222222222222222222222222222222222222222222222222
-
-
-
-
         }
-
-        if (Input.GetMouseButtonDown(1))
+        else
         {
-            //Debug.Log("回転チェック：" + roX);
-            Debug.Log("Boolチェック：" + playerController.KnifeisKinematic);
+           rbKnife.angularVelocity = Vector3.zero;
+                rbKnife.maxAngularVelocity = 0;
+            
+        }
+        
+            
+        
+        
+      
+
+
+        if (isStart)
+        {
+            Time.timeScale = 1;
         }
     }
 
-    
-
-    private void OnCollisionEnter(Collision collision)
+    private void OnTriggerEnter(Collider collision)
     {
-        
-       
+        if (collision.tag == "paka" || collision.tag == "pica" || collision.tag == "chopp")
+        {
+           
+            isCutting = true;
+        }
+        if (collision.tag == "Block" || collision.tag == "Goal")
+        {
+            rbKnife.maxAngularVelocity = RotationSpeed;
+            isCutting = false;
+
+        }
+
+
     }
+   
+
+
+    private float GetInpectorEulersX(Transform mTransform)
+    {
+        Vector3 angle = mTransform.eulerAngles;
+        float x = angle.x;
+        
+
+        if (Vector3.Dot(mTransform.up, Vector3.up) >= 0f)
+        {
+            if (angle.x >= 0f && angle.x <= 90f)
+            {
+                x = angle.x;
+            }
+            if (angle.x >= 270f && angle.x <= 360f)
+            {
+                x = angle.x - 360f;
+            }
+        }
+        if (Vector3.Dot(mTransform.up, Vector3.up) < 0f)
+        {
+            if (angle.x >= 0f && angle.x <= 90f)
+            {
+                x = 180 - angle.x;
+            }
+            if (angle.x >= 270f && angle.x <= 360f)
+            {
+                x = 180 - angle.x;
+            }
+        }
+
+
+        float roX = Mathf.Round(x);
+
+        return roX;
+    }
+
 }

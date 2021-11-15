@@ -6,34 +6,39 @@ using UnityEngine;
 
 public class KnifeMove : MonoBehaviour
 {
-
     [SerializeField]
-    private Rigidbody rbKnife;           //←力を加える対象
+    public Rigidbody rbKnife;           //←力を加える対象
     [SerializeField]
     private GameObject goKnife;
-    public float upForce = 5000.0f; //上方向にかける力
-    public float frontForce = 500.0f; //前方向にかける力
+
+    public float upSpeed = 5000.0f; //上方向にかける力
+    public float frontSpeed = 500.0f; //前方向にかける力
+    public float Startspeed = 1.0f;
+    public float speedMax = 1.0f;
+    public bool KnifeisKinematic;
+    public bool GoalFlag = true;
 
 
     private float distance;
     private Vector3 startPosition, targetPosition;
-    // スピード
-    public float speed = 1.0F;
 
-    public AudioClip sound1;
+    public AudioClip sound_jump;
     AudioSource audioSource;
+    public Slicer slicer;
+
+
 
     // Start is called before the first frame update
     void Start()
     {
         //Componentを取得
         audioSource = GetComponent<AudioSource>();
-
+        rbKnife.constraints = RigidbodyConstraints.FreezeRotationY | RigidbodyConstraints.FreezeRotationZ | RigidbodyConstraints.FreezePositionX;
 
     }
     private void FixedUpdate()
     {
-        rbKnife.constraints = RigidbodyConstraints.FreezeRotationY | RigidbodyConstraints.FreezeRotationZ | RigidbodyConstraints.FreezePositionX;
+
 
     }
 
@@ -41,72 +46,65 @@ public class KnifeMove : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-       
 
+      
         //rigidbodyバージョン
         if (Input.GetMouseButtonDown(0))
         {
-            //音(sound1)を鳴らす
-            audioSource.PlayOneShot(sound1);
+
+            //音(sound_jump)を鳴らす
+            audioSource.PlayOneShot(sound_jump);
 
             rbKnife.isKinematic = false;
-            Vector3 force = new Vector3(0.0f, upForce * 1.2f, -frontForce/3);    // 力を設定
-            rbKnife.AddForce(force);  // 力を加える
-            Debug.Log("ここに入ってる？");
+
+            Vector3 v = new Vector3(0.0f, upSpeed, -frontSpeed);
+
+            // rbKnife.AddForce(force);  // 力を加える
+            rbKnife.velocity = v;
+            slicer.MoneyFlag = false;
+            slicer.OneCount = 0;
         }
 
 
-        if (rbKnife.isKinematic == false)
+        //ここでPlayerRotationをtrueにする
+        if (rbKnife.isKinematic == false) KnifeisKinematic = false;
+
+
+    }
+
+    private void OnTriggerEnter(Collider collision)
+    {
+        if (collision.tag == "paka" || collision.tag == "pica" || collision.tag == "chopp")
         {
-            float roX = goKnife.transform.localEulerAngles.x;//オブジェクトの回転座標取得
-
-            if (roX <= 180.0f)
-            {
-                Debug.Log("回転：速い");
-                //触れていないときに回転
-                //goKife.transform.Rotate(0, 0, 0.5f, Space.World);
-                goKnife.transform.Rotate(new Vector3(0.8f, 0, 0));//1フレームごとに0.5度回転
-            }
-            else
-            {
-
-                Debug.Log("回転：遅い");
-                //goKife.transform.Rotate(0, 0, 2.0f, Space.World);
-                goKnife.transform.Rotate(new Vector3(0.3f, 0, 0));//1フレームごとに0.5度回転
-            }
-
-
-
+            slicer.MoneyFlag = true;
         }
-       
 
-        if (Input.GetMouseButtonDown(1))
+        if (collision.tag == "Block" || collision.tag == "Goal")
         {
-           
-            Debug.Log("回転：");
-          //  Debug.Log("着地：targetPosition" + targetPosition);
+            Debug.Log("停止");
+            rbKnife.isKinematic = true;//ここで完全に固定させる
+
+            if (rbKnife.isKinematic == true) KnifeisKinematic = true;//rotationのためのフラグ
+
+            slicer.MoneyFlag = false;
+
+            //if(collision.tag=="Goal")
+            //{
+            //    if(GoalFlag==true)
+            //    {
+
+            //        GoalFlag = false;
+            //    }
+
+            //}
         }
     }
 
-    //private void OnCollisionEnter(Collision collision)
-    //{
-    //    if (collision.tag == "Block")
-    //    {
-    //        Debug.Log("触れた");
-    //        //ここで完全に固定させる
-    //        rbKnife.isKinematic = true;
-    //    }
-    //}
-
-    void OnTriggerEnter(Collider collision)
+    private void OnCollisionExit(Collision col)
     {
-        
-        if (collision.tag == "Block"||collision.tag=="Goal")
-        {
-           Debug.Log("Blockと接触");
-            //ここで完全に固定させる
-            rbKnife.isKinematic = true;
-        }
+
+        //念のため離れた時にRotationが呼ばれるようにする
+        rbKnife.isKinematic = false;
 
     }
 

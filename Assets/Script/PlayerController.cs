@@ -12,13 +12,14 @@ public class PlayerController : MonoBehaviour
     private GameObject goKnife;
     public GameObject LosePanel;
 
-    public float upForce = 5000.0f; //上方向にかける力
-    public float frontForce = 500.0f; //前方向にかける力
-    public float speed = 1.0f; // スピード
+    //public float upForce = 5000.0f; //上方向にかける力
+    //public float frontForce = 500.0f; //前方向にかける力
+    public float upSpeed = 5000.0f; //上方向
+    public float frontSpeed = 500.0f; //前方向
     public bool KnifeisKinematic;
     public bool GoalFlag = true;
 
-    private bool ConstraintsFlag = true;
+    public bool ConstraintsFlag = true;
     private float distance;
     private Vector3 startPosition, targetPosition;
    
@@ -48,7 +49,7 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-
+    
         /*
         //rigidbodyでオブジェクト切断時の外力で挙動が可笑しくなる場合こちらに変更
         if (Input.GetMouseButtonDown(0))
@@ -92,17 +93,22 @@ public class PlayerController : MonoBehaviour
         {
             if (Input.GetMouseButtonDown(0))
             {
-
+                if(rbKnife.isKinematic)
+                {
+                   goKnife.transform.position+= Vector3.up*0.3f;
+                }
                 //音(sound_jump)を鳴らす
                 audioSource.PlayOneShot(sound_jump);
+             
 
-                rbKnife.isKinematic = false;
-                Vector3 force = new Vector3(0.0f, upForce * 1.2f, -frontForce / 3);    // 力を設定
-                                                                                       //↑修正する。
-                rbKnife.AddForce(force);  // 力を加える
-
+                //Vector3 force = new Vector3(0.0f, upForce * 1.2f, -frontForce / 3);    // 力を設定
+                //↑修正する。
+                // rbKnife.AddForce(force);  // 力を加える
+                Vector3 v = new Vector3(0.0f, upSpeed, -frontSpeed);
+                rbKnife.velocity = v;
                 slicer.MoneyFlag = false;
                 slicer.OneCount = 0;
+                rbKnife.isKinematic = false;
             }
 
 
@@ -112,44 +118,39 @@ public class PlayerController : MonoBehaviour
         
     }
 
-    //private void OnCollisionEnter(Collision collision)
-    //{
-    //     Debug.Log("触れた");
-    //     //ここで完全に固定させる
-    //     rbKnife.isKinematic = true;
-    //}
 
     private void OnTriggerEnter(Collider collision)
     {
         if (collision.tag == "paka" || collision.tag == "pica" || collision.tag == "chopp")
         {
             slicer.MoneyFlag = true;
+           
         }
 
         if (collision.tag == "Block"||collision.tag=="Goal")
         {
-             Debug.Log("停止");
+            //goKnife.GetComponent<Collider>().isTrigger = false;
             rbKnife.isKinematic = true;//ここで完全に固定させる
-            
-            if(rbKnife.isKinematic == true) KnifeisKinematic = true;//rotationのためのフラグ
-
+            if (rbKnife.isKinematic == true) KnifeisKinematic = true;//rotationのためのフラグ
             slicer.MoneyFlag = false;
         }
 
+
         if(collision.tag=="Ground")
         {
+            goKnife.GetComponent<Collider>().isTrigger = false;
             ConstraintsFlag = false;
             rbKnife.constraints = RigidbodyConstraints.None;
             LosePanel.SetActive(true);
         }
     }
-
-    private void OnCollisionExit(Collision col)
+    private void OnCollisionExit(Collision collision)
     {
-       
-        //念のため離れた時にRotationが呼ばれるようにする
-       // rbKnife.isKinematic = false;
-       
+       //goKnife.GetComponent<Collider>().isTrigger =true;//
     }
+   
+
+
+ 
 
 }
